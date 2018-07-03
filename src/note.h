@@ -23,18 +23,24 @@ using std::vector;
 */
 
 class note {
-
-	int absolute_note; // A == 0, A# == 1, ... , G# == 11
-
+public:
 	enum Accidental
 	{
-		FLAT = -1, NONE = 0, SHARP = 1
-	} accidental = NONE;
+		DOUBLE_FLAT = -2, FLAT = -1, NATURAL = 0, SHARP = 1, DOUBLE_SHARP = 2
+	};
+
+private:
+    int absolute_note; // A == 0, A# == 1, ... , G# == 11
+
+    Accidental accidental;
+    Accidental preferred_accidental; //the default accidental to use when not provided any
 
 	string str_note;
 
 public:
-	note(string str) {
+	note(string str, Accidental preferred_accidental = SHARP)
+        : accidental(NATURAL), preferred_accidental(preferred_accidental) 
+    {
 		if (!validate(str)) {
 			throw "Invalid notes!";
 		}
@@ -49,23 +55,28 @@ public:
 
 		absolute_note = indexMap[index];
 
-		if (str.size() > 1) { //has accidental
+		if (str.size() >= 2) { //has accidental
 			switch (str[1]) {
 			case 'b':
-				shift_semitone(-1);
-				accidental = FLAT;
+                if (str.size() >= 3 && str[2] == 'b') {
+                    shift_semitone(-2, DOUBLE_FLAT);
+                } else {
+                    shift_semitone(-1, FLAT);
+                }
 				break;
 			case '#':
-				shift_semitone(1);
-				accidental = SHARP;
+				shift_semitone(1, SHARP);
 				break;
+            case 'x':
+                shift_semitone(2, DOUBLE_SHARP);
+                break;
 			}
-		}
-
-		updateString();
+        } else {
+            updateString();
+        }
 	}
 
-	note& shift_semitone(int semitones) {
+	note& shift_semitone(int semitones, Accidental default_accidental = NATURAL) {
 		unsigned int abs_shift = (semitones > 0) ? semitones : 12 + semitones;
 		absolute_note = (absolute_note + abs_shift) % 12;
 		
@@ -75,11 +86,13 @@ public:
 		case 6:  // D#/Eb
 		case 9:  // F#/Gb
 		case 11: // G#/Ab
-			accidental = SHARP; //default use sharp
+            if (default_accidental == NATURAL)
+                accidental = preferred_accidental;
+            else
+                accidental = default_accidental;
 			break;
 		default:
-			accidental = NONE;
-			break;
+            accidental = default_accidental;
 		}
 
 		updateString();
@@ -87,6 +100,11 @@ public:
 	}
 
 	note& respell() {
+
+        // reduce from double sharp/flat
+        if (accidental == DOUBLE_FLAT || accidental == DOUBLE_SHARP) {
+            accidental = NATURAL; // if resulting note requires (#/b) accidental, it will be handled below
+        }
 		switch (absolute_note)
 		{
 			//No accidental notes
@@ -98,15 +116,26 @@ public:
 			//Special accidental notes
 		case 3: //C <-> B#
 		case 8: //F <-> E#
-			accidental = (accidental == NONE) ? SHARP : NONE;
+			accidental = (accidental == NATURAL) ? SHARP : NATURAL;
 			break;
 		case 7: //E <-> Fb
 		case 2: //B <-> Cb
-			accidental = (accidental == NONE) ? FLAT : NONE;
+			accidental = (accidental == NATURAL) ? FLAT : NATURAL;
 			break;
 
-		default: //switch between sharp and flat
-			accidental = (accidental == SHARP) ? FLAT : SHARP;
+		default: //switch between sharp and flat, or the preferred accidental
+            switch (accidental) {
+            case SHARP:
+                accidental = FLAT;
+                break;
+            case FLAT:
+                accidental = SHARP;
+                break;
+            case NATURAL:
+                accidental = preferred_accidental;
+                break;
+            }
+			//accidental = (accidental == SHARP) ? FLAT : SHARP;
 			break;
 		}
 
@@ -137,7 +166,7 @@ public:
 		}
 
 		if (str_note.size() > 1) {
-			if (str_note[1] != 'b' && str_note[1] != '#') {
+			if (str_note[1] != 'b' && str_note[1] != '#' && str_note[1] != 'x') {
 				return false;
 			}
 		}
@@ -218,6 +247,12 @@ private:
 		case FLAT:
 			str_note += "b";
 			break;
+        case DOUBLE_SHARP:
+            str_note += "x";
+            break;
+        case DOUBLE_FLAT:
+            str_note += "bb";
+            break;
 		}
 	}
 };

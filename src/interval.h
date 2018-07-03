@@ -65,23 +65,26 @@ public:
 		uniqueIndexes = note::getUniqueIndexes(allNotes);
 	}
 
-	virtual void reset(const string &line) {
+	virtual interval& reset(const string &line) {
 		split(line);
 		uniqueIndexes = note::getUniqueIndexes(allNotes);
+        return *this;
 	}
 
-	virtual void reset(const vector<string> &allNotes) {
+	virtual interval& reset(const vector<string> &allNotes) {
 		this->allNotes.clear();
 		//convert strings to notes
 		for (string note_str : allNotes) {
 			this->allNotes.push_back(note_str);
 		}
 		uniqueIndexes = note::getUniqueIndexes(this->allNotes);
+        return *this;
 	}
 
-	virtual void reset(const vector<note> &allNotes) {
+	virtual interval& reset(const vector<note> &allNotes) {
 		this->allNotes = allNotes;
 		uniqueIndexes = note::getUniqueIndexes(allNotes);
+        return *this;
 	}
 
 	void printInterval(Dint current_root) const {

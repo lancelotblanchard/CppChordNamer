@@ -25,12 +25,11 @@ int main(void) {
 	
 	while (1) {
 		puts("Enter notes separated by spaces or commas:");
-        std::getline(std::cin, line);
+		std::getline(std::cin, line);
 		system(clearScreen);
 		printf("Entered notes: %s\n\n", line.c_str());
 		try {
-			theChord.reset(line);
-			theChord.printAllPossible();
+			theChord.reset(line).printAllPossible();
 		} catch (const char *msg) {
 			printf("\n%s\n", msg);
 		}

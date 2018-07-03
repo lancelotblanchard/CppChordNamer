@@ -28,22 +28,25 @@ public:
 		evaluateAllPossibleChordNames();
 	}
 
-	void reset(const vector<string> &allNotes) override {
+	chord& reset(const vector<string> &allNotes) override {
 		interval::reset(allNotes);
 		chordNames.clear();
 		evaluateAllPossibleChordNames();
+        return *this;
 	}
 
-	void reset(const string &line) override {
+    chord& reset(const string &line) override {
 		interval::reset(line);
 		chordNames.clear();
 		evaluateAllPossibleChordNames();
+        return *this;
 	}
 
-	void reset(const vector<note> &allNotes) override {
+    chord& reset(const vector<note> &allNotes) override {
 		interval::reset(allNotes);
 		chordNames.clear();
 		evaluateAllPossibleChordNames();
+        return *this;
 	}
 
 	static string getChordQuality(const vector<note> &allNotes, Dint current_root, int *ranking = nullptr) {
@@ -187,8 +190,7 @@ private:
 	}
 
 	int evaluateChordName(Dint current_root) {
-		int total_count = allNotes.size();
-
+        
 		//currently is just the number of additional intervals (+ 1 if is sus chord)
 		//The lower the better
 		int ranking; 
@@ -197,6 +199,7 @@ private:
 
 		if (current_root != 0) { //not in root position (slash chord)
 			chordName += "/" + allNotes[0].toString();
+            ranking++;
 		}
 
 		this->chordNames.push_back(chordName);
