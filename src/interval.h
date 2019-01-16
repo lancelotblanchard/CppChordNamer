@@ -18,21 +18,44 @@
   11   |   7
 */
 
+/*
+INTERVAL MACRO CONVENTIONS:
+    m : minor
+    M : major
+    P : perfect
+    d : diminished
+    A : augmented
+*/
+
+// basic
 #define m2 1	//minor 2nd
 #define M2 2	//major 2nd
 #define m3 3	//minor 3rd
 #define M3 4	//major 3rd
+#define d4 4    //diminished 4th
 #define P4 5	//perfect 4th
 #define A4 6	//augmented 4th
-#define D5 6	//diminished 5th
+#define d5 6	//diminished 5th
 #define P5 7	//perfect 5th
 #define A5 8	//augmented 5th
 #define m6 8	//minor 6th
 #define M6 9	//major 6th
 #define m7 10	//minor 7th
 #define M7 11	//major 7th
-#define m9 1	//minor 9th
-#define M9 2	//major 9th
+
+// extensions
+#define m9 m2	//minor 9th
+#define M9 M2	//major 9th
+#define P11 P4  //perfect 11th
+#define A11 A4  //augmented 11th (#11)
+#define m13 m6  //minor 13th (b13)
+#define M13 M6  //major 13th
+
+// extras
+#define A2 m3   //augmented 2nd (#2)
+#define d6 P5   //diminished 6th (bb6)
+#define A6 m7   //augmented 6th (#6)
+#define d7 M6   //diminished 7th (bb7)
 
 #include <string>
 #include <vector>
@@ -67,6 +90,9 @@ public:
 
 	virtual interval& reset(const string &line) {
 		split(line);
+        if (allNotes.size() < 2) {
+            throw "At least two notes are required.";
+        }
 		uniqueIndexes = note::getUniqueIndexes(allNotes);
         return *this;
 	}
@@ -140,7 +166,7 @@ public:
 			thirdPresent = true;
 		} 
 		if (exist[P5]) { //perfect 5th
-			possible_intervals[D5] = "#11";
+			possible_intervals[d5] = "#11";
 			possible_intervals[m6] = "b13";
 		} 
 		if (exist[m7] || exist[M7]) { //minor or major 7th
@@ -148,12 +174,12 @@ public:
 		} 
 		if (exist[m3]) { //minor 3rd
 			thirdPresent = true;
-			if (exist[D5] && exist[M6] && !exist[m7] && !exist[M7]) { //full diminished chord
+			if (exist[d5] && exist[d7] && !exist[m7] && !exist[M7]) { //full diminished chord
 				if (chordMode) {
-					possible_intervals[M6] = "7";
+					possible_intervals[d7] = "7";
 					possible_intervals[m6] = "13";
 				} else {
-					possible_intervals[M6] = "bb7";
+					possible_intervals[d7] = "bb7";
 					possible_intervals[m6] = "b13";
 				}
 			}

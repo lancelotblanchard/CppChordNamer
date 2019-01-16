@@ -49,7 +49,7 @@ public:
         return *this;
 	}
 
-	static string getChordQuality(const vector<note> &allNotes, Dint current_root, int *ranking = nullptr) {
+	static string getChordQualityFromNotes(const vector<note> &allNotes, Dint current_root, int *ranking = nullptr) {
 		size_t total_count = allNotes.size();
 
 		note root = allNotes[current_root];
@@ -61,12 +61,12 @@ public:
 			distances.push_back(root.getDistanceTo(current_note));
 		}
 
-		return getChordQuality(distances, ranking);
+		return getChordQualityFromDists(distances, ranking);
 	}
 
-	static string getChordQuality(const vector<Dint> &distances, int *ranking = nullptr) {
+	static string getChordQualityFromDists(const vector<Dint> &distances, int *ranking = nullptr) {
 
-		Dint extStack[4] = { M7, M2, P4, M6 }; //default 7 9 11 13
+		Dint extStack[4] = { M7, M9, P11, M13 }; //default 7 9 11 13
 
 		vector<string> intervalList = getIntervalList(distances, true);
 
@@ -90,7 +90,7 @@ public:
 
 		} else if (check(exist[m3])) { //minor chord
 
-			if (!check(exist[P5]) && check(exist[D5])) { //dim chord
+			if (!check(exist[P5]) && check(exist[d5])) { //dim chord
 				isdim = true;
 
 				if (exist[m7]) { //mXb5 (halfdim)
@@ -106,14 +106,16 @@ public:
 			}
 
 		} else { //suspended chord
-			exist[P5] = false;
 			if (check(exist[P4])) {
 				sus += "sus4";
 			} else if (check(exist[M2])) {
 				sus += "sus2";
-			} else {
+            } else if (check(exist[P5])) {
+                quality += "5";
+            } else {
 				additional.push_back("omit3");
 			}
+            exist[P5] = false;
 		}
 
 		string extension = getExtensions(exist, extStack, intervalList, isdim);
@@ -195,12 +197,32 @@ private:
 		//The lower the better
 		int ranking; 
 
-		string chordName = allNotes[current_root].toString() + getChordQuality(allNotes, current_root, &ranking);
+        string chordName = allNotes[current_root].toString();
+        string chordQuality = getChordQualityFromNotes(allNotes, current_root, &ranking);
 
 		if (current_root != 0) { //not in root position (slash chord)
-			chordName += "/" + allNotes[0].toString();
+
+            if (allNotes.size() > 1) {
+                int rootless_ranking;
+
+                vector<note> rootless_allNotes = allNotes;
+                rootless_allNotes[0] = rootless_allNotes[1]; // "hide" the root
+
+                string rootless_chordQuality = getChordQualityFromNotes(rootless_allNotes, current_root, &rootless_ranking);
+
+                // check if rootless chord quality is shorter (simpler)
+                // TODO: can include as additional optional chord name instead of replacing it
+                if (rootless_chordQuality.size() < chordQuality.size()) {
+                    chordQuality = rootless_chordQuality;
+                    ranking = rootless_ranking;
+                }
+            }
+
+            chordQuality += "/" + allNotes[0].toString();
             ranking++;
 		}
+
+        chordName += chordQuality;
 
 		this->chordNames.push_back(chordName);
 
@@ -232,11 +254,18 @@ private:
 		int count = ranking.size();
 		for (int i = 1; i < count; i++) {
 			for (int j = i; j > 0; j--) {
-				if (ranking[j] < ranking[j - 1]) {
+
+                // chord name sizes act as tie breaker
+                if (ranking[j] == ranking[j - 1] && chordNames[j].size() < chordNames[j - 1].size()) {
+                    swap(j, j - 1, ranking);
+                } 
+                else if (ranking[j] < ranking[j - 1]) {
 					swap(j, j - 1, ranking);
-				} else {
+				} 
+                else {
 					break;
 				}
+
 			}
 		}
 	}
@@ -247,8 +276,8 @@ private:
 			ext = "maj";
 		} else if (check(exist[m7])) { //dom7
 			//nothing
-		} else if (isdim && check(exist[M6])) { //dim7
-			extStack[0] = M6; //dim7 == maj6
+		} else if (isdim && check(exist[d7])) { //dim7
+			extStack[0] = d7; //dim7 == maj6
 			extStack[3] = m6; //change 13 to b13
 		} else {
 			return "";
@@ -266,10 +295,10 @@ private:
 	}
 
 	static bool isAltered(bool *exist) {
-		if (exist[M3] && exist[A5] && !(exist[m2] || exist[m3] || exist[D5])) {
+		if (exist[M3] && exist[A5] && !(exist[m2] || exist[A2] || exist[d5])) {
 			return false; //only #5 is present, so is aug chord
 		}
-		return (exist[m2] || exist[m3] || exist[D5] || exist[A5]);
+		return (exist[m2] || exist[A2] || exist[d5] || exist[A5]);
 	}
 
 	//return the value of val and mark val as false
