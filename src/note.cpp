@@ -143,7 +143,7 @@ bool ChordNamer::Note::validate(const std::string &strNote) {
     }
 
     //If letter first
-    if (char c = strNote[0]; (c > 'a' && c < 'g') || (c > 'A' && c < 'G')) {
+    if (char c = strNote[0]; (c >= 'a' && c <= 'g') || (c >= 'A' && c <= 'G')) {
         //If flat
         if (strNote.size() > 1 && strNote[1] == 'b') {
             if (strNote.size() > 2 && strNote[2] == 'b') {
