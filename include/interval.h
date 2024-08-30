@@ -58,6 +58,7 @@ INTERVAL MACRO CONVENTIONS:
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "note.h"
 
