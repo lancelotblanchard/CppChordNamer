@@ -33,17 +33,17 @@ ChordNamer::Chord &ChordNamer::Chord::reset(const std::vector<Note> &allNotes) {
 	return *this;
 }
 
-std::string ChordNamer::Chord::getChordQualityFromNotes(const std::vector<Note> &allNotes, const uint32_t current_root,
+std::string ChordNamer::Chord::getChordQualityFromNotes(const std::vector<Note> &allNotes, const uint32_t currentRoot,
                                                         int32_t *ranking) {
-	const size_t total_count = allNotes.size();
+	const size_t totalCount = allNotes.size();
 
-	const Note &root = allNotes[current_root];
+	const Note &root = allNotes[currentRoot];
 
 	std::vector<uint32_t> distances; //in terms of semitones
 
-	for (size_t k = 0; k < total_count; k++) {
-		const Note &current_note = allNotes[(current_root + k) % total_count];
-		distances.push_back(root.getDistanceTo(current_note));
+	for (size_t k = 0; k < totalCount; k++) {
+		const Note &currentNote = allNotes[(currentRoot + k) % totalCount];
+		distances.push_back(root.getDistanceTo(currentNote));
 	}
 
 	return getChordQualityFromDists(distances, ranking);
@@ -164,31 +164,31 @@ void ChordNamer::Chord::evaluateAllPossibleChordNames() {
 	insertionSortChordNames(ranking);
 }
 
-int32_t ChordNamer::Chord::evaluateChordName(uint32_t current_root) {
+int32_t ChordNamer::Chord::evaluateChordName(uint32_t currentRoot) {
 	//currently is just the number of additional intervals (+ 1 if is sus chord)
 	//The lower the better
 	int32_t ranking;
 
-	std::string chordName = allNotes[current_root].toString();
-	std::string chordQuality = getChordQualityFromNotes(allNotes, current_root, &ranking);
+	std::string chordName = allNotes[currentRoot].toString();
+	std::string chordQuality = getChordQualityFromNotes(allNotes, currentRoot, &ranking);
 
-	if (current_root != 0) {
+	if (currentRoot != 0) {
 		//not in root position (slash chord)
 
 		if (allNotes.size() > 1) {
-			int32_t rootless_ranking;
+			int32_t rootlessRanking;
 
 			std::vector<Note> rootless_allNotes = allNotes;
 			rootless_allNotes[0] = rootless_allNotes[1]; // "hide" the root
 
-			std::string rootless_chordQuality = getChordQualityFromNotes(
-				rootless_allNotes, current_root, &rootless_ranking);
+			std::string rootlessChordQuality = getChordQualityFromNotes(
+				rootless_allNotes, currentRoot, &rootlessRanking);
 
 			// check if rootless chord quality is shorter (simpler)
 			// TODO: can include as additional optional chord name instead of replacing it
-			if (rootless_chordQuality.size() < chordQuality.size()) {
-				chordQuality = rootless_chordQuality;
-				ranking = rootless_ranking;
+			if (rootlessChordQuality.size() < chordQuality.size()) {
+				chordQuality = rootlessChordQuality;
+				ranking = rootlessRanking;
 			}
 		}
 
@@ -204,17 +204,17 @@ int32_t ChordNamer::Chord::evaluateChordName(uint32_t current_root) {
 }
 
 void ChordNamer::Chord::swap(int32_t x, int32_t y, std::vector<int32_t> &ranking) {
-	std::string tmp_str = chordNames[x];
+	std::string tmpStr = chordNames[x];
 	chordNames[x] = chordNames[y];
-	chordNames[y] = tmp_str;
+	chordNames[y] = tmpStr;
 
-	uint32_t tmp_dint = uniqueIndexes[x];
+	uint32_t tmpDint = uniqueIndexes[x];
 	uniqueIndexes[x] = uniqueIndexes[y];
-	uniqueIndexes[y] = tmp_dint;
+	uniqueIndexes[y] = tmpDint;
 
-	int32_t tmp_int = ranking[x];
+	int32_t tmpInt = ranking[x];
 	ranking[x] = ranking[y];
-	ranking[y] = tmp_int;
+	ranking[y] = tmpInt;
 }
 
 void ChordNamer::Chord::insertionSortChordNames(std::vector<int32_t> &ranking) {
@@ -252,9 +252,9 @@ std::string ChordNamer::Chord::getExtensions(bool *exist, uint32_t extStack[],
 
 	uint32_t highest = extStack[0];
 	for (int32_t i = 1; i < 4; i++) {
-		uint32_t curr_ext = extStack[i];
-		if (check(exist[curr_ext])) {
-			highest = curr_ext;
+		uint32_t currExt = extStack[i];
+		if (check(exist[currExt])) {
+			highest = currExt;
 		}
 	}
 

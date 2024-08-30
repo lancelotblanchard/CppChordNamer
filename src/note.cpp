@@ -23,16 +23,16 @@ ChordNamer::Note::Note(const std::string &str, const Accidental preferredAcciden
         switch (str[1]) {
             case 'b':
                 if (str.size() >= 3 && str[2] == 'b') {
-                    shift_semitone(-2, DOUBLE_FLAT);
+                    shiftSemitone(-2, DOUBLE_FLAT);
                 } else {
-                    shift_semitone(-1, FLAT);
+                    shiftSemitone(-1, FLAT);
                 }
                 break;
             case '#':
-                shift_semitone(1, SHARP);
+                shiftSemitone(1, SHARP);
                 break;
             case 'x':
-                shift_semitone(2, DOUBLE_SHARP);
+                shiftSemitone(2, DOUBLE_SHARP);
                 break;
             default:
                 break;
@@ -42,9 +42,9 @@ ChordNamer::Note::Note(const std::string &str, const Accidental preferredAcciden
     }
 }
 
-ChordNamer::Note &ChordNamer::Note::shift_semitone(const int32_t semitones, const Accidental default_accidental) {
-    const uint32_t abs_shift = (semitones > 0) ? semitones : 12 + semitones;
-    absoluteNote = static_cast<int32_t>(absoluteNote + abs_shift) % 12;
+ChordNamer::Note &ChordNamer::Note::shiftSemitone(const int32_t semitones, const Accidental defaultAccidental) {
+    const uint32_t absShift = (semitones > 0) ? semitones : 12 + semitones;
+    absoluteNote = static_cast<int32_t>(absoluteNote + absShift) % 12;
 
     switch (absoluteNote) {
         case 1: // A#/Bb
@@ -52,13 +52,13 @@ ChordNamer::Note &ChordNamer::Note::shift_semitone(const int32_t semitones, cons
         case 6: // D#/Eb
         case 9: // F#/Gb
         case 11: // G#/Ab
-            if (default_accidental == NATURAL)
+            if (defaultAccidental == NATURAL)
                 accidental = preferredAccidental;
             else
-                accidental = default_accidental;
+                accidental = defaultAccidental;
             break;
         default:
-            accidental = default_accidental;
+            accidental = defaultAccidental;
     }
 
     updateString();
@@ -141,17 +141,17 @@ uint32_t ChordNamer::Note::getDistanceTo(const Note &right) const {
 
 ChordNamer::Note ChordNamer::Note::getNoteFromDistance(int semitone) const {
     Note target(*this);
-    return target.shift_semitone(semitone);
+    return target.shiftSemitone(semitone);
 }
 
 std::vector<ChordNamer::Note> ChordNamer::Note::extractUnique(const std::vector<Note> &allNotes) {
     std::vector<Note> unique;
     bool bNotes[12] = {false};
 
-    for (const Note &curr_note: allNotes) {
-        if (!bNotes[curr_note.absoluteNote]) {
-            bNotes[curr_note.absoluteNote] = true;
-            unique.push_back(curr_note);
+    for (const Note &currNote: allNotes) {
+        if (!bNotes[currNote.absoluteNote]) {
+            bNotes[currNote.absoluteNote] = true;
+            unique.push_back(currNote);
         }
     }
     return unique;

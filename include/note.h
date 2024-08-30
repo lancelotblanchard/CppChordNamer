@@ -27,7 +27,7 @@ namespace ChordNamer {
 
 		explicit Note(const std::string &str, Accidental preferredAccidental = SHARP);
 
-		Note &shift_semitone(int32_t semitones, Accidental default_accidental = NATURAL);
+		Note &shiftSemitone(int32_t semitones, Accidental defaultAccidental = NATURAL);
 
 		Note &respell();
 

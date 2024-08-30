@@ -24,8 +24,8 @@ ChordNamer::Interval &ChordNamer::Interval::reset(const std::string &line) {
 ChordNamer::Interval &ChordNamer::Interval::reset(const std::vector<std::string> &allNotes) {
     this->allNotes.clear();
     //convert strings to notes
-    for (const std::string &note_str: allNotes) {
-        this->allNotes.emplace_back(note_str);
+    for (const std::string &noteStr: allNotes) {
+        this->allNotes.emplace_back(noteStr);
     }
     uniqueIndexes = Note::getUniqueIndexes(this->allNotes);
     return *this;
@@ -39,7 +39,7 @@ ChordNamer::Interval &ChordNamer::Interval::reset(const std::vector<Note> &allNo
 
 std::vector<std::string>
 ChordNamer::Interval::getIntervalList(const std::vector<uint32_t> &distances, const bool chordMode) {
-    std::vector<std::string> possible_intervals = {"1", "b9", "9", "b3", "3", "11", "b5", "5", "#5", "6", "b7", "7"};
+    std::vector<std::string> possibleIntervals = {"1", "b9", "9", "b3", "3", "11", "b5", "5", "#5", "6", "b7", "7"};
 
     bool exist[12] = {false};
     //below compare with semitone interval
@@ -58,17 +58,17 @@ ChordNamer::Interval::getIntervalList(const std::vector<uint32_t> &distances, co
 
     if (exist[M3]) {
         //major 3rd
-        possible_intervals[m3] = "#9";
+        possibleIntervals[m3] = "#9";
         thirdPresent = true;
     }
     if (exist[P5]) {
         //perfect 5th
-        possible_intervals[d5] = "#11";
-        possible_intervals[m6] = "b13";
+        possibleIntervals[d5] = "#11";
+        possibleIntervals[m6] = "b13";
     }
     if (exist[m7] || exist[M7]) {
         //minor or major 7th
-        possible_intervals[M6] = "13";
+        possibleIntervals[M6] = "13";
     }
     if (exist[m3]) {
         //minor 3rd
@@ -76,24 +76,24 @@ ChordNamer::Interval::getIntervalList(const std::vector<uint32_t> &distances, co
         if (exist[d5] && exist[d7] && !exist[m7] && !exist[M7]) {
             //full diminished chord
             if (chordMode) {
-                possible_intervals[d7] = "7";
-                possible_intervals[m6] = "13";
+                possibleIntervals[d7] = "7";
+                possibleIntervals[m6] = "13";
             } else {
-                possible_intervals[d7] = "bb7";
-                possible_intervals[m6] = "b13";
+                possibleIntervals[d7] = "bb7";
+                possibleIntervals[m6] = "b13";
             }
         }
     }
 
     if (!thirdPresent) {
         //sus chord
-        possible_intervals[P4] = "4";
+        possibleIntervals[P4] = "4";
 
         if (!exist[P4])
-            possible_intervals[M2] = "2";
+            possibleIntervals[M2] = "2";
     }
 
-    return possible_intervals;
+    return possibleIntervals;
 }
 
 std::vector<std::string> ChordNamer::Interval::distancesToIntervals(const std::vector<uint32_t> &distances) {
@@ -110,19 +110,19 @@ std::vector<std::string> ChordNamer::Interval::distancesToIntervals(const std::v
 
 void ChordNamer::Interval::split(const std::string &line) {
     this->allNotes.clear();
-    std::string note_str;
+    std::string noteStr;
     for (const char c: line) {
         if ((c == ' ' || c == ',')) {
             //encounters delimiter
-            if (!note_str.empty()) {
-                allNotes.emplace_back(note_str);
-                note_str.clear();
+            if (!noteStr.empty()) {
+                allNotes.emplace_back(noteStr);
+                noteStr.clear();
             }
         } else {
-            note_str += c;
+            noteStr += c;
         }
     }
-    if (!note_str.empty()) {
-        allNotes.emplace_back(note_str);
+    if (!noteStr.empty()) {
+        allNotes.emplace_back(noteStr);
     }
 }

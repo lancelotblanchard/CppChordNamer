@@ -23,7 +23,7 @@ namespace ChordNamer {
 
 		Chord &reset(const std::vector<Note> &allNotes) override;
 
-		static std::string getChordQualityFromNotes(const std::vector<Note> &allNotes, uint32_t current_root,
+		static std::string getChordQualityFromNotes(const std::vector<Note> &allNotes, uint32_t currentRoot,
 		                                            int32_t *ranking = nullptr);
 
 		static std::string getChordQualityFromDists(const std::vector<uint32_t> &distances, int32_t *ranking = nullptr);
@@ -33,7 +33,7 @@ namespace ChordNamer {
 	private:
 		void evaluateAllPossibleChordNames();
 
-		int32_t evaluateChordName(uint32_t current_root);
+		int32_t evaluateChordName(uint32_t currentRoot);
 
 		/*
 		chordNames, uniqueIndexes, and ranking all corresponds with each other,
