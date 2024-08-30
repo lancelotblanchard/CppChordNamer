@@ -3,7 +3,7 @@
 ChordNamer::Note::Note(const std::string &str, const Accidental preferredAccidental): accidental(NATURAL),
     preferredAccidental(preferredAccidental) {
     if (!validate(str)) {
-        throw std::invalid_argument("Invalid notes!");
+        throw std::invalid_argument("Invalid note: " + str);
     }
 
     int index;
@@ -18,23 +18,43 @@ ChordNamer::Note::Note(const std::string &str, const Accidental preferredAcciden
 
     absoluteNote = indexMap[index];
 
+    //has accidental
     if (str.size() >= 2) {
-        //has accidental
-        switch (str[1]) {
-            case 'b':
-                if (str.size() >= 3 && str[2] == 'b') {
+        switch (str[0]) {
+            //accidental is before note (LDP-style) (-,--,+,x)
+            case '-':
+                if (str.size() >= 3 && str[1] == '-') {
                     shiftSemitone(-2, DOUBLE_FLAT);
                 } else {
                     shiftSemitone(-1, FLAT);
                 }
                 break;
-            case '#':
+            case '+':
                 shiftSemitone(1, SHARP);
                 break;
             case 'x':
                 shiftSemitone(2, DOUBLE_SHARP);
                 break;
+
+            //accidental is after note (b,bb,#,x)
             default:
+                switch (str[1]) {
+                    case 'b':
+                        if (str.size() >= 3 && str[2] == 'b') {
+                            shiftSemitone(-2, DOUBLE_FLAT);
+                        } else {
+                            shiftSemitone(-1, FLAT);
+                        }
+                        break;
+                    case '#':
+                        shiftSemitone(1, SHARP);
+                        break;
+                    case 'x':
+                        shiftSemitone(2, DOUBLE_SHARP);
+                        break;
+                    default:
+                        throw std::invalid_argument("Invalid note: " + str);
+                }
                 break;
         }
     } else {
@@ -122,17 +142,41 @@ bool ChordNamer::Note::validate(const std::string &strNote) {
         return false;
     }
 
-    if (char firstChar = strNote[0]; firstChar < 'A' || (firstChar > 'G' && firstChar < 'a') || firstChar > 'g') {
-        return false;
-    }
-
-    if (strNote.size() > 1) {
-        if (strNote[1] != 'b' && strNote[1] != '#' && strNote[1] != 'x') {
-            return false;
+    //If letter first
+    if (char c = strNote[0]; (c > 'a' && c < 'g') || (c > 'A' && c < 'G')) {
+        //If flat
+        if (strNote.size() > 1 && strNote[1] == 'b') {
+            if (strNote.size() > 2 && strNote[2] == 'b') {
+                return true;
+            }
+            return strNote.size() == 2;
         }
+
+        //If sharp or double sharp
+        if (strNote.size() > 1 && (strNote[1] == '#' || strNote[1] == 'x')) {
+            return strNote.size() == 2;
+        }
+
+        return strNote.size() == 1;
     }
 
-    return true;
+    //If sharp or double sharp first
+    if (char c = strNote[0]; c == '+' || c == 'x') {
+        return strNote.size() == 2 && ((strNote[1] >= 'a' && strNote[1] <= 'g') || (
+                                           strNote[1] >= 'A' && strNote[1] <= 'G'));
+    }
+
+    // If flat first
+    if (strNote[0] == '-') {
+        if (strNote.size() > 1 && strNote[1] == '-') {
+            return strNote.size() == 3 && ((strNote[2] >= 'a' && strNote[2] <= 'g') || (
+                                               strNote[2] >= 'A' && strNote[2] <= 'G'));
+        }
+        return strNote.size() == 2 && ((strNote[1] >= 'a' && strNote[1] <= 'g') || (
+                                           strNote[1] >= 'A' && strNote[1] <= 'G'));
+    }
+
+    return false;
 }
 
 uint32_t ChordNamer::Note::getDistanceTo(const Note &right) const {
