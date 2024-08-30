@@ -149,7 +149,8 @@ std::string ChordNamer::Chord::getChordQualityFromDists(const std::vector<uint32
 }
 
 void ChordNamer::Chord::evaluateAllPossibleChordNames() {
-	std::vector<int32_t> ranking(uniqueIndexes.size());
+	std::vector<int32_t> ranking;
+	ranking.reserve(uniqueIndexes.size());
 
 	for (const uint32_t i: uniqueIndexes) {
 		ranking.push_back(evaluateChordName(i));

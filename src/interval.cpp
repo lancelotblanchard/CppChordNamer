@@ -99,7 +99,8 @@ ChordNamer::Interval::getIntervalList(const std::vector<uint32_t> &distances, co
 std::vector<std::string> ChordNamer::Interval::distancesToIntervals(const std::vector<uint32_t> &distances) {
     std::vector<std::string> intervalList = getIntervalList(distances);
 
-    std::vector<std::string> intervals(distances.size()); //actual intervals present in the input list
+    std::vector<std::string> intervals; //actual intervals present in the input list
+    intervals.reserve(distances.size());
 
     for (const uint32_t &semitone: distances) {
         intervals.push_back(intervalList[semitone]);
