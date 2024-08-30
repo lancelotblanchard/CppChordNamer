@@ -1,4 +1,6 @@
-#include <interval.h>
+#include <stdexcept>
+
+#include "interval.h"
 
 ChordNamer::Interval::Interval(const std::string &line) {
     reset(line);

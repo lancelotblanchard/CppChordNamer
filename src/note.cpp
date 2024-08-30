@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "note.h"
 
 ChordNamer::Note::Note(const std::string &str, const Accidental preferredAccidental): accidental(NATURAL),

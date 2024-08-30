@@ -1,4 +1,4 @@
-#include <chord.h>
+#include "chord.h"
 
 ChordNamer::Chord::Chord(const std::vector<std::string> &allNotes) : Interval(allNotes) {
 	evaluateAllPossibleChordNames();

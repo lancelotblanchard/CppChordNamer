@@ -1,0 +1,124 @@
+name: build
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    name: Build ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { id: "build-ubuntu22.04-gcc11-Release",                                          container: "ubuntu:22.04",                                build_type: "Release",        cc: "gcc-11", cxx: "g++-11" }
+          - { id: "build-ubuntu22.04-gcc11-Debug",                                            container: "ubuntu:22.04",                                build_type: "Debug",          cc: "gcc-11", cxx: "g++-11" }
+          - { id: "build-ubuntu22.04-gcc11-RelWithDebInfo",                                   container: "ubuntu:22.04",                                build_type: "RelWithDebInfo", cc: "gcc-11", cxx: "g++-11" }
+          - { id: "build-ubuntu22.04-gcc11-MinSizeRel",                                       container: "ubuntu:22.04",                                build_type: "MinSizeRel",     cc: "gcc-11", cxx: "g++-11" }
+          - { id: "build-ubuntu22.04-gcc12-Release",                                          container: "ubuntu:22.04",                                build_type: "Release",        cc: "gcc-12", cxx: "g++-12" }
+          - { id: "build-ubuntu24.04-gcc11-Release",                                          container: "ubuntu:24.04",                                build_type: "Release",        cc: "gcc-11", cxx: "g++-11" }
+          - { id: "build-ubuntu24.04-gcc13-Release",                                          container: "ubuntu:24.04",                                build_type: "Release",        cc: "gcc-13", cxx: "g++-13" }
+          - { id: "build-ubuntu20.04-gcc11-Release",                                          container: "ubuntu:20.04",                                build_type: "Release",        cc: "gcc-11", cxx: "g++-11" }
+    container: "${{ matrix.container }}"
+    env:
+      CC: "/usr/bin/${{ matrix.cc }}"
+      CXX: "/usr/bin/${{ matrix.cxx }}"
+      CCACHE_BASEDIR: "${{ github.workspace }}"
+      CCACHE_DIR: "${{ github.workspace }}/.ccache"
+      CCACHE_COMPRESS: "true"
+      CCACHE_COMPRESSLEVEL: "6"
+      CCACHE_MAXSIZE: "400M"
+    steps:
+      - name: Get number of CPU cores
+        run: echo "NUM_CPU_CORES=$(grep -c processor /proc/cpuinfo)" >> $GITHUB_OUTPUT
+        id: num-cpu-cores
+      - name: Update apt
+        run: apt-get update
+      - name: Install git, sudo, lsb-release, wget, curl, ca-certificates, gpg
+        run: apt-get install -y git sudo lsb-release wget curl ca-certificates gpg
+        env:
+          DEBIAN_FRONTEND: "noninteractive" # Workaround interactive tzdata Ubuntu 20.04
+      - name: Get copy of kitware signing key
+        if: ${{ contains(matrix.container, 'ubuntu') }}
+        run: 'wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null'
+      - name: Add kitware Ubuntu repository
+        if: ${{ contains(matrix.container, 'ubuntu') }}
+        run: 'echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null'
+        shell: bash
+      - name: Get copy of Ubuntu toolchain signing key
+        if: ${{ contains(matrix.container, 'ubuntu') && contains(matrix.container, '20.04') }}
+        run: 'wget -O - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xc8ec952e2a0e1fbdc5090f6a2c277a0a352154e5" 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/toolchain.gpg >/dev/null'
+      - name: Add Ubuntu toolchain repository
+        if: ${{ contains(matrix.container, 'ubuntu') && contains(matrix.container, '20.04') }}
+        run: 'echo "deb [signed-by=/usr/share/keyrings/toolchain.gpg] https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/toolchain.list >/dev/null'
+        shell: bash
+      - name: Update apt
+        run: apt-get update
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0 # Fetch all tags for version info
+        id: build-rev
+      - name: Ccache cache files
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ${{ matrix.id }}-ccache-${{ hashFiles('**/CMakeLists.txt', '.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ matrix.id }}-ccache-${{ hashFiles('**/CMakeLists.txt', '.github/workflows/*.yml') }}
+            ${{ matrix.id }}-ccache-
+      - name: Install Build Dependencies
+        run: apt-get install -y cmake ccache build-essential gdb clang pkg-config ${{ matrix.cc }} ${{ matrix.cxx }}
+        env:
+          DEBIAN_FRONTEND: "noninteractive" # Workaround interactive tzdata Ubuntu 20.04
+      - name: Build ChordNamer Library
+        run: cmake -S . -B _builds/${{ matrix.build_type }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && cmake --build _builds/${{ matrix.build_type }} --parallel ${{ steps.num-cpu-cores.outputs.NUM_CPU_CORES }}
+      - name: Archive artifacts
+        if: always()
+        shell: bash
+        run: tar -cvzf libchordnamer-${{ matrix.id }}.tar.gz libchordnamer.a
+        working-directory: _builds/${{ matrix.build_type }}
+      - name: Display structure and size of build files and archive
+        if: always()
+        run: ls -alR
+        working-directory: _builds/${{ matrix.build_type }}
+      - name: SHA256 built files and archive
+        if: always()
+        run: find . -type f -exec sha256sum {} \;
+        working-directory: _builds/${{ matrix.build_type }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.id }}
+          path: _builds/${{ matrix.build_type }}/libchordnamer-${{ matrix.id }}.tar.gz
+  publish-release-artifacts:
+    name: Publish Release Artifacts to GitHub
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Display structure of artifact files
+        run: ls -R
+        working-directory: artifacts
+      - name: Flatten artifact directories
+        shell: bash
+        run: find ./ -mindepth 2 -type f -exec mv -t ./ --backup=t '{}' +
+        working-directory: artifacts
+      - name: SHA256 files
+        shell: bash
+        run: sha256sum *.tar.gz | tee libchordnamer-SHA256SUMS_${GITHUB_REF##*/}
+        working-directory: artifacts
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          prerelease: ${{ contains(github.event.ref, '-pre') || contains(github.event.ref, '-alpha') || contains(github.event.ref, '-beta') || contains(github.event.ref, '-rc') || contains(github.event.ref, '-dev') }}
+          files: |
+            artifacts/*.tar.gz
+            artifacts/libchordnamer-SHA256SUMS_*
