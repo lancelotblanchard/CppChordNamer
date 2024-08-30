@@ -6,13 +6,18 @@ ChordNamer::Note::Note(const std::string &str, const Accidental preferredAcciden
         throw std::invalid_argument("Invalid note: " + str);
     }
 
-    int index;
-    if (str[0] >= 97) {
-        // lower case
-        index = str[0] - 97;
-    } else {
-        // upper case
-        index = str[0] - 65;
+    int index = -1;
+    for (const char c: str) {
+        if (c >= 'a' && c <= 'g') {
+            // lower case
+            index = c - 97;
+        } else if (c >= 'A' && c <= 'g') {
+            // upper case
+            index = c - 65;
+        }
+    }
+    if (index == -1) {
+        throw std::invalid_argument("Invalid note: " + str);
     }
     const static int indexMap[7] = {0 /*A*/, 2 /*B*/, 3 /*C*/, 5 /*D*/, 7 /*E*/, 8 /*F*/, 10 /*G*/};
 
