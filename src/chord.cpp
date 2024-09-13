@@ -143,7 +143,7 @@ std::string ChordNamer::Chord::getChordQualityFromDists(const std::vector<uint32
 
 	if (ranking != nullptr) {
 		//the lower the number, the simple the chord name is
-		*ranking = static_cast<int32_t>(additional.size()) + sus.empty(); //sus has weight 1
+		*ranking = static_cast<int32_t>(additional.size()) + !sus.empty(); //sus has weight 1
 	}
 	return quality;
 }
